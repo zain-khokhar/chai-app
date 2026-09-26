@@ -8,6 +8,7 @@ import {
   getDocs,
   setDoc,
   updateDoc,
+  deleteDoc,
   addDoc,
   query,
   where,
@@ -19,6 +20,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { db } from './firebase';
+import { SEED_MENU } from './seed';
 import {
   ShopDoc,
   MenuItemDoc,
@@ -99,6 +101,38 @@ export async function upsertMenuItem(
   return ref.id;
 }
 
+export async function deleteMenuItem(shopId: string, itemId: string): Promise<void> {
+  await deleteDoc(doc(db, 'shops', shopId, 'menuItems', itemId));
+}
+
+export async function toggleMenuItemAvailability(
+  shopId: string,
+  itemId: string,
+  available: boolean
+): Promise<void> {
+  await updateDoc(doc(db, 'shops', shopId, 'menuItems', itemId), {
+    available,
+    updatedAt: Date.now(),
+  });
+}
+
+export async function loadDefaultMenuForShop(shopId: string): Promise<void> {
+  const now = Date.now();
+  const slug = (str: string) => str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  for (const item of SEED_MENU) {
+    const id = `${shopId}-${slug(item.teaType)}-${slug(item.size)}`;
+    await setDoc(doc(db, 'shops', shopId, 'menuItems', id), {
+      id,
+      teaType: item.teaType,
+      size: item.size,
+      price: item.price,
+      available: true,
+      createdAt: now,
+      updatedAt: now,
+    }, { merge: true });
+  }
+}
+
 // ─── Workers ─────────────────────────────────────────────────────────────────
 
 export async function getWorkers(shopId: string): Promise<WorkerDoc[]> {
@@ -133,6 +167,14 @@ export async function getWorkerByUid(uid: string): Promise<WorkerDoc | null> {
   if (snap.empty) return null;
   const d = snap.docs[0];
   return { id: d.id, ...d.data() } as WorkerDoc;
+}
+
+export async function toggleWorkerActive(workerId: string, active: boolean): Promise<void> {
+  await updateDoc(doc(db, 'workers', workerId), { active });
+}
+
+export async function deleteWorker(workerId: string): Promise<void> {
+  await deleteDoc(doc(db, 'workers', workerId));
 }
 
 // ─── Orders ──────────────────────────────────────────────────────────────────

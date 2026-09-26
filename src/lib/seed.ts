@@ -9,7 +9,7 @@ import { DEMO_ACCOUNTS } from './auth';
 
 const DEMO_SHOP_ID = 'demo-multan-chai-point';
 
-const SEED_MENU = [
+export const SEED_MENU = [
   { teaType: 'Doodh Patti', size: 'Chota Cup', price: 40 },
   { teaType: 'Doodh Patti', size: 'Bara Cup', price: 70 },
   { teaType: 'Karak Chai', size: 'Chota Cup', price: 50 },

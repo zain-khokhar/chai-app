@@ -9,7 +9,9 @@ import {
   User,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from './firebase';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { auth, db, firebaseConfig } from './firebase';
 import { UserDoc, UserRole } from './types';
 
 /**
@@ -157,3 +159,67 @@ export const DEMO_ACCOUNTS = {
   worker: { phone: '03111234567', pin: '123456', name: 'Hamza' },
   owner: { phone: '03211234567', pin: '123456', name: 'Chai Point Owner' },
 } as const;
+
+// ─── Add Worker For Shop ─────────────────────────────────────────────────────
+
+export async function createWorkerAccount(params: {
+  shopId: string;
+  name: string;
+  phone: string;
+  pin: string;
+  zone: string;
+}): Promise<string> {
+  const { shopId, name, phone, pin, zone } = params;
+  const email = makeEmail(phone);
+  const password = makePassword(phone, pin);
+
+  // Initialize secondary Firebase App so owner's active session is NOT replaced
+  const secondaryAppName = 'workerCreationApp';
+  let secondaryApp;
+  if (getApps().some((app) => app.name === secondaryAppName)) {
+    secondaryApp = getApp(secondaryAppName);
+  } else {
+    secondaryApp = initializeApp(firebaseConfig, secondaryAppName);
+  }
+  const secondaryAuth = getAuth(secondaryApp);
+
+  let workerUid: string;
+  try {
+    const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+    workerUid = cred.user.uid;
+    await secondaryAuth.signOut();
+  } catch (err: any) {
+    if (err.code === 'auth/email-already-in-use' || err.message?.includes('email-already-in-use')) {
+      const cred = await signInWithEmailAndPassword(secondaryAuth, email, password);
+      workerUid = cred.user.uid;
+      await secondaryAuth.signOut();
+    } else {
+      throw err;
+    }
+  }
+
+  const now = Date.now();
+  // 1. Write users/{uid}
+  await setDoc(doc(db, 'users', workerUid), {
+    uid: workerUid,
+    role: 'WORKER',
+    name,
+    phone,
+    shopId,
+    createdAt: now,
+  }, { merge: true });
+
+  // 2. Write workers/{uid}
+  await setDoc(doc(db, 'workers', workerUid), {
+    id: workerUid,
+    uid: workerUid,
+    shopId,
+    name,
+    phone,
+    zone: zone || 'Multan',
+    active: true,
+    createdAt: now,
+  }, { merge: true });
+
+  return workerUid;
+}

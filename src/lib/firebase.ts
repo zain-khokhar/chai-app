@@ -7,7 +7,7 @@ import { getFirestore } from 'firebase/firestore';
 
 // Use placeholder values for build-time static generation
 // Real values come from env vars at runtime
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? 'AIzaSyPlaceholder000000000000000000000000',
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ?? 'chaikhata-placeholder.firebaseapp.com',
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ?? 'chaikhata-placeholder',
