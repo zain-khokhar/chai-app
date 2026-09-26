@@ -1,21 +1,44 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { seedDemoData, DEMO_SHOP_ID } from '@/lib/seed';
-import { loginUser, getUserDoc, DEMO_ACCOUNTS } from '@/lib/auth';
-import { signOut } from '@/lib/auth';
+import { seedDemoData, isDemoDataSeeded } from '@/lib/seed';
+import { loginUser, DEMO_ACCOUNTS, signOut } from '@/lib/auth';
+import { usePWA } from '@/contexts/PWAContext';
+import { ArrowLeft, Smartphone, RefreshCw, CheckCircle2 } from 'lucide-react';
+import Link from 'next/link';
 
 type DemoRole = 'customer' | 'worker' | 'owner';
 
 export default function DemoPage() {
   const router = useRouter();
+  const { openMobileAppModal } = usePWA();
   const [loading, setLoading] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [error, setError] = useState('');
   const [seeded, setSeeded] = useState(false);
   const [activeRole, setActiveRole] = useState<DemoRole | null>(null);
+
+  useEffect(() => {
+    // Check local cache first for instant response
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem('chaikhata_demo_seeded');
+      if (cached === 'true') {
+        setSeeded(true);
+      }
+    }
+
+    // Verify with Firestore
+    isDemoDataSeeded().then((isReady) => {
+      if (isReady) {
+        setSeeded(true);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('chaikhata_demo_seeded', 'true');
+        }
+      }
+    });
+  }, []);
 
   async function handleSeed() {
     setSeeding(true);
@@ -23,6 +46,9 @@ export default function DemoPage() {
     try {
       await seedDemoData();
       setSeeded(true);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('chaikhata_demo_seeded', 'true');
+      }
     } catch (err: any) {
       setError('Seeding failed: ' + err.message);
     } finally {
@@ -37,8 +63,17 @@ export default function DemoPage() {
     try {
       await signOut();
       const account = DEMO_ACCOUNTS[role];
-      await loginUser(account.phone, account.pin);
-      const userDoc = await getUserDoc((await loginUser(account.phone, account.pin)).uid);
+      try {
+        await loginUser(account.phone, account.pin);
+      } catch {
+        // Auto-seed if account not seeded yet
+        await seedDemoData();
+        setSeeded(true);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('chaikhata_demo_seeded', 'true');
+        }
+        await loginUser(account.phone, account.pin);
+      }
 
       switch (role) {
         case 'customer': router.push('/customer'); break;
@@ -46,7 +81,7 @@ export default function DemoPage() {
         case 'owner': router.push('/owner'); break;
       }
     } catch (err: any) {
-      setError('Login failed — did you seed demo data first? ' + err.message);
+      setError('Login failed: ' + (err.message || 'Please try again.'));
     } finally {
       setLoading(false);
       setActiveRole(null);
@@ -82,12 +117,34 @@ export default function DemoPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--milk-cream)' }}>
-      {/* Demo Banner */}
-      <div className="demo-banner">
-        🧪 DEMO MODE — Prototype Testing
+      {/* Top Banner */}
+      <div className="demo-banner flex items-center justify-between px-4 py-2">
+        <span>🧪 DEMO MODE — Prototype Testing</span>
+        <button
+          onClick={openMobileAppModal}
+          className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded bg-white/20 hover:bg-white/30 transition-colors"
+        >
+          <Smartphone size={12} />
+          <span>Mobile App</span>
+        </button>
       </div>
 
-      <div className="flex-1 px-5 py-6 flex flex-col gap-5">
+      <div className="flex-1 px-5 py-6 flex flex-col gap-5 max-w-md mx-auto w-full">
+        {/* Navigation & Title */}
+        <div className="flex items-center justify-between">
+          <Link href="/" className="btn-ghost p-2 -ml-2 rounded-full">
+            <ArrowLeft size={20} />
+          </Link>
+          <button
+            onClick={openMobileAppModal}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-amber-800/20 bg-amber-800/5 hover:bg-amber-800/10 transition-colors"
+            style={{ color: 'var(--chai-brown)' }}
+          >
+            <Smartphone size={14} />
+            <span>Install App</span>
+          </button>
+        </div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -101,61 +158,90 @@ export default function DemoPage() {
           </p>
         </motion.div>
 
-        {/* Step 1: Seed */}
+        {/* Step 1: Demo Setup Status (Persistent) */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
           className="card p-5"
         >
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white"
-              style={{ background: seeded ? 'var(--cardamom-green)' : 'var(--chai-brown)' }}>
-              {seeded ? '✓' : '1'}
-            </div>
-            <div>
-              <p className="font-bold text-sm" style={{ color: 'var(--warm-charcoal)' }}>
-                Setup Demo Data
-              </p>
-              <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                Creates shop, menu, and 3 test accounts in Firestore
-              </p>
-            </div>
-          </div>
-
           {seeded ? (
-            <p className="text-sm font-semibold" style={{ color: 'var(--cardamom-green)' }}>
-              ✓ Demo data ready! You can now login as any role.
-            </p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white bg-emerald-600 flex-shrink-0">
+                  <CheckCircle2 size={18} />
+                </div>
+                <div>
+                  <p className="font-bold text-sm text-gray-900">
+                    Demo Data Ready
+                  </p>
+                  <p className="text-xs text-emerald-700 font-medium">
+                    ✓ Setup completed (1-time only)
+                  </p>
+                </div>
+              </div>
+              <button
+                id="demo-reseed"
+                onClick={handleSeed}
+                disabled={seeding}
+                className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 text-gray-600 transition-colors"
+                title="Re-seed demo data if you want to reset orders"
+              >
+                <RefreshCw size={12} className={seeding ? 'animate-spin' : ''} />
+                <span>{seeding ? 'Resetting…' : 'Reset'}</span>
+              </button>
+            </div>
           ) : (
-            <button
-              id="demo-seed"
-              onClick={handleSeed}
-              disabled={seeding}
-              className="btn-primary w-full text-sm"
-              style={{ minHeight: 44 }}
-            >
-              {seeding ? (
-                <span className="flex items-center gap-2">
-                  <span className="spinner border-white/40 border-t-white" style={{ width: 16, height: 16 }} />
-                  Setting up…
-                </span>
-              ) : (
-                'Setup Demo Data'
-              )}
-            </button>
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white"
+                  style={{ background: 'var(--chai-brown)' }}
+                >
+                  1
+                </div>
+                <div>
+                  <p className="font-bold text-sm" style={{ color: 'var(--warm-charcoal)' }}>
+                    Setup Demo Data (Required Once)
+                  </p>
+                  <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                    Creates shop, menu, and 3 test accounts in Firestore
+                  </p>
+                </div>
+              </div>
+
+              <button
+                id="demo-seed"
+                onClick={handleSeed}
+                disabled={seeding}
+                className="btn-primary w-full text-sm"
+                style={{ minHeight: 44 }}
+              >
+                {seeding ? (
+                  <span className="flex items-center gap-2">
+                    <span className="spinner border-white/40 border-t-white" style={{ width: 16, height: 16 }} />
+                    Setting up…
+                  </span>
+                ) : (
+                  'Setup Demo Data'
+                )}
+              </button>
+            </div>
           )}
         </motion.div>
 
-        {/* Step 2: Choose role */}
+        {/* Step 2: Choose role (Always accessible) */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.2 }}
+          className="flex flex-col gap-3"
         >
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white"
-              style={{ background: 'var(--chai-brown)' }}>
+          <div className="flex items-center gap-3 mb-1">
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white"
+              style={{ background: 'var(--chai-brown)' }}
+            >
               2
             </div>
             <div>
@@ -175,8 +261,8 @@ export default function DemoPage() {
                 id={`demo-${card.role}`}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => loginAs(card.role)}
-                disabled={loading || !seeded}
-                className="card p-4 text-left w-full disabled:opacity-50 transition-all hover:shadow-md"
+                disabled={loading}
+                className="card p-4 text-left w-full disabled:opacity-50 transition-all hover:shadow-md cursor-pointer"
               >
                 <div className="flex items-start gap-4">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 bg-gradient-to-br ${card.gradient}`}>
@@ -202,44 +288,15 @@ export default function DemoPage() {
           </div>
         </motion.div>
 
-        {/* Flow guide */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.3 }}
-          className="card-surface p-4"
-        >
-          <p className="text-caption font-bold mb-3" style={{ color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            Test Flow
-          </p>
-          <div className="flex flex-col gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-            {[
-              ['🧑‍💼', 'Customer', 'Place order → get delivery code'],
-              ['👔', 'Owner', 'Accept order → assign worker (Hamza)'],
-              ['🛵', 'Worker', 'Enter delivery code → delivery verified'],
-              ['🧑‍💼', 'Customer', 'Confirm cash payment'],
-              ['👔', 'Owner', 'See reconciliation → settle with Hamza'],
-            ].map(([emoji, role, action], i) => (
-              <div key={i} className="flex items-center gap-3">
-                <span className="text-base">{emoji}</span>
-                <div className="flex-1">
-                  <span className="font-semibold">{role}: </span>
-                  <span className="opacity-75">{action}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
         {error && (
-          <p className="text-sm font-medium text-red-600 bg-red-50 px-4 py-3 rounded-xl">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-medium"
+          >
             {error}
-          </p>
+          </motion.div>
         )}
-
-        <p className="text-center text-xs pb-4" style={{ color: 'var(--text-tertiary)' }}>
-          All demo credentials: PIN = 123456
-        </p>
       </div>
     </div>
   );

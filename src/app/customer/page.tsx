@@ -9,12 +9,14 @@ import { ShopDoc } from '@/lib/types';
 import { getGreeting, formatPKR } from '@/lib/utils';
 import { signOut } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
-import { Home, Search, ShoppingBag, User, MapPin, ChevronRight, LogOut } from 'lucide-react';
+import { Home, Search, ShoppingBag, User, MapPin, ChevronRight, LogOut, Smartphone } from 'lucide-react';
+import { usePWA } from '@/contexts/PWAContext';
 import CustomerBottomNav from './CustomerBottomNav';
 import CustomerOrdersList from './CustomerOrdersList';
 
 export default function CustomerHome() {
   const { userDoc } = useAuth();
+  const { openMobileAppModal } = usePWA();
   const [shops, setShops] = useState<ShopDoc[]>([]);
   const [tab, setTab] = useState<'home' | 'orders' | 'profile'>('home');
   const router = useRouter();
@@ -45,6 +47,15 @@ export default function CustomerHome() {
               </h1>
             </div>
             <div className="flex items-center gap-2 pt-1">
+              <button
+                onClick={openMobileAppModal}
+                className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full font-medium"
+                style={{ background: 'var(--milk-cream-dark)', color: 'var(--chai-brown)' }}
+                title="Install Mobile App"
+              >
+                <Smartphone size={13} />
+                <span>App</span>
+              </button>
               <Link
                 href="/demo"
                 className="text-xs px-2.5 py-1.5 rounded-full font-medium"
@@ -170,6 +181,28 @@ export default function CustomerHome() {
                   </p>
                 </div>
               </div>
+            </div>
+
+            <div className="card p-4 mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-amber-100 text-amber-900 text-lg">
+                  📱
+                </div>
+                <div>
+                  <p className="font-bold text-sm" style={{ color: 'var(--warm-charcoal)' }}>
+                    ChaiKhata Mobile App
+                  </p>
+                  <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                    Install on phone home screen
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={openMobileAppModal}
+                className="btn-primary text-xs py-2 px-3.5"
+              >
+                Install
+              </button>
             </div>
 
             <button onClick={handleLogout} className="btn-ghost w-full flex items-center gap-3 text-red-600 py-4">

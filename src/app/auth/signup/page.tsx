@@ -6,11 +6,15 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { isValidPakistaniPhone, isValidPIN } from '@/lib/utils';
 import { signUpUser } from '@/lib/auth';
-import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { usePWA } from '@/contexts/PWAContext';
+import { ArrowLeft, Eye, EyeOff, Smartphone, Store, UserCheck } from 'lucide-react';
 
 export default function SignupPage() {
   const router = useRouter();
+  const { openMobileAppModal } = usePWA();
+  const [role, setRole] = useState<'CUSTOMER' | 'OWNER'>('CUSTOMER');
   const [name, setName] = useState('');
+  const [shopName, setShopName] = useState('');
   const [phone, setPhone] = useState('');
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
@@ -23,6 +27,10 @@ export default function SignupPage() {
 
     if (!name.trim() || name.trim().length < 2) {
       setError('Enter your full name');
+      return;
+    }
+    if (role === 'OWNER' && (!shopName.trim() || shopName.trim().length < 2)) {
+      setError('Enter your Tea Shop name');
       return;
     }
     if (!isValidPakistaniPhone(phone)) {
@@ -44,9 +52,15 @@ export default function SignupPage() {
         name: name.trim(),
         phone: phone.trim(),
         pin: pin.trim(),
-        role: 'CUSTOMER',
+        role,
+        ...(role === 'OWNER' ? { shopName: shopName.trim() } : {}),
       });
-      router.replace('/customer');
+
+      if (role === 'OWNER') {
+        router.replace('/owner');
+      } else {
+        router.replace('/customer');
+      }
     } catch (err: any) {
       if (err.code === 'auth/email-already-in-use' || err.message?.includes('email-already-in-use')) {
         setError('This phone number is already registered. Please login.');
@@ -62,41 +76,98 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--milk-cream)' }}>
-      <div className="flex items-center gap-3 p-5">
+      {/* Header */}
+      <div className="flex items-center justify-between p-5">
         <Link href="/" className="btn-ghost p-2 rounded-full">
           <ArrowLeft size={22} />
         </Link>
+        <button
+          onClick={openMobileAppModal}
+          className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-amber-800/20 bg-amber-800/5 hover:bg-amber-800/10 transition-colors"
+          style={{ color: 'var(--chai-brown)' }}
+        >
+          <Smartphone size={14} />
+          <span>Mobile App</span>
+        </button>
       </div>
 
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="flex-1 flex flex-col px-6 pt-2 pb-8"
+        className="flex-1 flex flex-col px-6 pt-2 pb-8 max-w-md mx-auto w-full"
       >
-        <div className="mb-8">
+        <div className="mb-6">
           <div className="text-3xl mb-2">☕</div>
           <h1 className="text-headline" style={{ color: 'var(--warm-charcoal)' }}>
             Create account
           </h1>
           <p className="text-body mt-1" style={{ color: 'var(--text-secondary)' }}>
-            For customers & shop owners
+            For customers & tea shop owners in Multan
           </p>
         </div>
 
-        <div className="flex flex-col gap-5">
+        {/* Role Selection Tabs */}
+        <div className="flex bg-amber-900/10 p-1 rounded-2xl mb-5">
+          <button
+            type="button"
+            onClick={() => setRole('CUSTOMER')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs transition-all ${
+              role === 'CUSTOMER'
+                ? 'bg-white text-[var(--warm-charcoal)] shadow-sm'
+                : 'text-[var(--text-secondary)] hover:text-[var(--warm-charcoal)]'
+            }`}
+          >
+            <UserCheck size={16} />
+            <span>Customer (Tea Buyer)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setRole('OWNER')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs transition-all ${
+              role === 'OWNER'
+                ? 'bg-white text-[var(--warm-charcoal)] shadow-sm'
+                : 'text-[var(--text-secondary)] hover:text-[var(--warm-charcoal)]'
+            }`}
+          >
+            <Store size={16} />
+            <span>Shop Owner (Dhaba)</span>
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-4">
           <div>
-            <label className="input-label">Your Name</label>
+            <label className="input-label">
+              {role === 'OWNER' ? 'Owner Full Name' : 'Your Full Name'}
+            </label>
             <input
               id="signup-name"
               type="text"
-              placeholder="e.g. Ali Rehman"
+              placeholder={role === 'OWNER' ? 'e.g. Haji Bashir Ahmad' : 'e.g. Ali Rehman'}
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="input-field"
               autoComplete="name"
             />
           </div>
+
+          {role === 'OWNER' && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+            >
+              <label className="input-label">Tea Shop / Dhaba Name</label>
+              <input
+                id="signup-shop-name"
+                type="text"
+                placeholder="e.g. Madina Chai Point & Doodh Patti"
+                value={shopName}
+                onChange={(e) => setShopName(e.target.value)}
+                className="input-field"
+              />
+            </motion.div>
+          )}
 
           <div>
             <label className="input-label">Phone Number</label>
@@ -114,7 +185,7 @@ export default function SignupPage() {
           </div>
 
           <div>
-            <label className="input-label">6-Digit PIN</label>
+            <label className="input-label">6-Digit PIN (Password)</label>
             <div className="relative">
               <input
                 id="signup-pin"
@@ -137,7 +208,7 @@ export default function SignupPage() {
           </div>
 
           <div>
-            <label className="input-label">Confirm PIN</label>
+            <label className="input-label">Confirm 6-Digit PIN</label>
             <input
               id="signup-confirm-pin"
               type="password"
@@ -153,7 +224,7 @@ export default function SignupPage() {
             <motion.p
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-sm font-medium text-red-600 bg-red-50 px-4 py-3 rounded-xl"
+              className="text-sm font-medium text-red-600 bg-red-50 px-4 py-3 rounded-xl border border-red-200"
             >
               {error}
             </motion.p>
@@ -165,9 +236,13 @@ export default function SignupPage() {
             disabled={loading}
             className="btn-primary w-full mt-2"
           >
-            {loading
-              ? <span className="spinner border-white/40 border-t-white" style={{ width: 20, height: 20 }} />
-              : 'Create Account'}
+            {loading ? (
+              <span className="spinner border-white/40 border-t-white" style={{ width: 20, height: 20 }} />
+            ) : role === 'OWNER' ? (
+              'Create Shop & Owner Account'
+            ) : (
+              'Create Customer Account'
+            )}
           </button>
         </div>
 

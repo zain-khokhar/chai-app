@@ -12,13 +12,15 @@ import {
 import { OrderDoc, CashSettlementDoc, WorkerDoc } from '@/lib/types';
 import { formatPKR, formatTime, getOrderStatusLabel } from '@/lib/utils';
 import { signOut } from '@/lib/auth';
-import { Clock, Package, Banknote, User, LogOut, ChevronRight } from 'lucide-react';
+import { Clock, Package, Banknote, User, LogOut, ChevronRight, Smartphone } from 'lucide-react';
+import { usePWA } from '@/contexts/PWAContext';
 import Link from 'next/link';
 
 type Tab = 'today' | 'cash' | 'profile';
 
 export default function WorkerHome() {
   const { user, userDoc } = useAuth();
+  const { openMobileAppModal } = usePWA();
   const router = useRouter();
   const [orders, setOrders] = useState<OrderDoc[]>([]);
   const [settlements, setSettlements] = useState<CashSettlementDoc[]>([]);
@@ -73,6 +75,15 @@ export default function WorkerHome() {
                 <h1 className="text-headline text-white">{userDoc?.name ?? 'Worker'}</h1>
               </div>
               <div className="flex items-center gap-2 pt-1">
+                <button
+                  onClick={openMobileAppModal}
+                  className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full font-medium"
+                  style={{ background: 'rgba(255,255,255,0.2)', color: '#fff' }}
+                  title="Install Mobile App"
+                >
+                  <Smartphone size={13} />
+                  <span>App</span>
+                </button>
                 <Link
                   href="/demo"
                   className="text-xs px-2.5 py-1.5 rounded-full font-medium"

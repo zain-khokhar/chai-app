@@ -34,8 +34,9 @@ export async function signUpUser(params: {
   pin: string;
   role: 'CUSTOMER' | 'OWNER';
   shopId?: string;
+  shopName?: string;
 }): Promise<User> {
-  const { name, phone, pin, role, shopId } = params;
+  const { name, phone, pin, role, shopId, shopName } = params;
   const email = makeEmail(phone);
   const password = makePassword(phone, pin);
 
@@ -56,16 +57,40 @@ export async function signUpUser(params: {
     }
   }
 
-  const userDoc: UserDoc = {
+  let finalShopId = shopId;
+  if (role === 'OWNER') {
+    if (!finalShopId) {
+      const { collection } = await import('firebase/firestore');
+      const shopRef = doc(collection(db, 'shops'));
+      finalShopId = shopRef.id;
+      await setDoc(shopRef, {
+        id: shopRef.id,
+        ownerUid: user.uid,
+        ownerName: name,
+        shopName: shopName || `${name}'s Chai Point`,
+        phone,
+        address: 'Multan, Pakistan',
+        area: 'Multan',
+        open: true,
+        minPrice: 40,
+        createdAt: Date.now(),
+      });
+    }
+  }
+
+  const userDocData: Record<string, any> = {
     uid: user.uid,
     role,
     name,
     phone,
-    shopId,
     createdAt: Date.now(),
   };
 
-  await setDoc(doc(db, 'users', user.uid), userDoc, { merge: true });
+  if (finalShopId) {
+    userDocData.shopId = finalShopId;
+  }
+
+  await setDoc(doc(db, 'users', user.uid), userDocData, { merge: true });
 
   // If customer, also create customer profile
   if (role === 'CUSTOMER') {

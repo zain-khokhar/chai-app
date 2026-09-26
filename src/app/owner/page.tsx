@@ -27,12 +27,15 @@ import {
   ChevronRight,
   CheckCircle,
   X,
+  Smartphone,
 } from 'lucide-react';
+import { usePWA } from '@/contexts/PWAContext';
 
 type Tab = 'dashboard' | 'orders' | 'workers' | 'cash';
 
 export default function OwnerHome() {
   const { user, userDoc } = useAuth();
+  const { openMobileAppModal } = usePWA();
   const router = useRouter();
   const [orders, setOrders] = useState<OrderDoc[]>([]);
   const [workers, setWorkers] = useState<WorkerDoc[]>([]);
@@ -113,6 +116,15 @@ export default function OwnerHome() {
                 <p className="text-xs opacity-60 mt-0.5">Multan Chai Point</p>
               </div>
               <div className="flex items-center gap-2">
+                <button
+                  onClick={openMobileAppModal}
+                  className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full font-medium"
+                  style={{ background: 'rgba(255,255,255,0.2)', color: '#fff' }}
+                  title="Install Mobile App"
+                >
+                  <Smartphone size={13} />
+                  <span>App</span>
+                </button>
                 <Link
                   href="/demo"
                   className="text-xs px-2.5 py-1.5 rounded-full font-medium"

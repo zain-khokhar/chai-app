@@ -6,10 +6,12 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { isValidPakistaniPhone, isValidPIN } from '@/lib/utils';
 import { loginUser, getUserDoc } from '@/lib/auth';
-import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { usePWA } from '@/contexts/PWAContext';
+import { ArrowLeft, Eye, EyeOff, Smartphone } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { openMobileAppModal } = usePWA();
   const [phone, setPhone] = useState('');
   const [pin, setPin] = useState('');
   const [showPin, setShowPin] = useState(false);
@@ -31,23 +33,29 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const user = await loginUser(phone.trim(), pin.trim());
-      const userDoc = await getUserDoc(user.uid);
-      if (!userDoc) throw new Error('User profile not found');
+      let userDoc = await getUserDoc(user.uid);
+      if (!userDoc) {
+        await new Promise((r) => setTimeout(r, 400));
+        userDoc = await getUserDoc(user.uid);
+      }
 
-      switch (userDoc.role) {
+      const role = userDoc?.role || 'CUSTOMER';
+      switch (role) {
         case 'CUSTOMER': router.replace('/customer'); break;
         case 'WORKER': router.replace('/worker'); break;
         case 'OWNER': router.replace('/owner'); break;
+        default: router.replace('/customer'); break;
       }
     } catch (err: any) {
       if (
         err.code === 'auth/invalid-credential' ||
         err.code === 'auth/user-not-found' ||
-        err.code === 'auth/wrong-password'
+        err.code === 'auth/wrong-password' ||
+        err.message?.includes('invalid-credential')
       ) {
         setError('Incorrect phone number or PIN');
       } else {
-        setError('Something went wrong. Please try again.');
+        setError(err.message || 'Something went wrong. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -57,17 +65,25 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--milk-cream)' }}>
       {/* Header */}
-      <div className="flex items-center gap-3 p-5">
+      <div className="flex items-center justify-between p-5">
         <Link href="/" className="btn-ghost p-2 rounded-full">
           <ArrowLeft size={22} />
         </Link>
+        <button
+          onClick={openMobileAppModal}
+          className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-amber-800/20 bg-amber-800/5 hover:bg-amber-800/10 transition-colors"
+          style={{ color: 'var(--chai-brown)' }}
+        >
+          <Smartphone size={14} />
+          <span>Mobile App</span>
+        </button>
       </div>
 
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="flex-1 flex flex-col px-6 pt-4"
+        className="flex-1 flex flex-col px-6 pt-4 max-w-md mx-auto w-full"
       >
         {/* Heading */}
         <div className="mb-8">
@@ -125,7 +141,7 @@ export default function LoginPage() {
             <motion.p
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-sm font-medium text-red-600 bg-red-50 px-4 py-3 rounded-xl"
+              className="text-sm font-medium text-red-600 bg-red-50 px-4 py-3 rounded-xl border border-red-200"
             >
               {error}
             </motion.p>

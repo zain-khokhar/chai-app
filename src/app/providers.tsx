@@ -15,11 +15,18 @@ const CartProvider = dynamic(
   { ssr: false }
 );
 
+const PWAProvider = dynamic(
+  () => import('@/contexts/PWAContext').then((m) => ({ default: m.PWAProvider })),
+  { ssr: false }
+);
+
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
       <CartProvider>
-        {children}
+        <PWAProvider>
+          {children}
+        </PWAProvider>
       </CartProvider>
     </AuthProvider>
   );

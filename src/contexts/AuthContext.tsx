@@ -26,7 +26,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = observeAuthState(async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
-        const doc = await getUserDoc(firebaseUser.uid);
+        let doc = await getUserDoc(firebaseUser.uid);
+        if (!doc) {
+          // Retry once in case of write latency right after registration
+          await new Promise((r) => setTimeout(r, 400));
+          doc = await getUserDoc(firebaseUser.uid);
+        }
         setUserDoc(doc);
       } else {
         setUserDoc(null);

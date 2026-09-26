@@ -164,4 +164,14 @@ export async function seedDemoData(): Promise<{
   return { customerUid, workerUid, ownerUid, shopId: DEMO_SHOP_ID };
 }
 
+export async function isDemoDataSeeded(): Promise<boolean> {
+  try {
+    const snap = await getDoc(doc(db, 'shops', DEMO_SHOP_ID));
+    return snap.exists();
+  } catch {
+    return false;
+  }
+}
+
 export { DEMO_SHOP_ID };
+
