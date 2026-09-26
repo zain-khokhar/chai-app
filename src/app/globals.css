@@ -1,0 +1,652 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+
+@import "tailwindcss";
+
+
+/* ============================================================
+   ChaiKhata Design System
+   ============================================================ */
+
+:root {
+  /* Brand Colors */
+  --chai-brown: #8B5A2B;
+  --chai-brown-dark: #6B3F18;
+  --chai-brown-light: #A8712E;
+  --milk-cream: #FBF3E7;
+  --milk-cream-dark: #F5E8D0;
+  --turmeric-gold: #E3A857;
+  --turmeric-gold-dark: #C8922E;
+  --cardamom-green: #4B6B3F;
+  --cardamom-green-light: #6B8B5F;
+  --warm-charcoal: #2B1B12;
+  --warm-charcoal-light: #4A3020;
+
+  /* Surface Colors */
+  --surface-0: #FFFFFF;
+  --surface-1: #FBF3E7;
+  --surface-2: #F5E8D0;
+  --surface-3: #EDD9B8;
+
+  /* Text Colors */
+  --text-primary: #2B1B12;
+  --text-secondary: #6B4E2A;
+  --text-tertiary: #9E7A50;
+  --text-inverse: #FFFFFF;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 3px rgba(43, 27, 18, 0.06);
+  --shadow-sm: 0 2px 8px rgba(43, 27, 18, 0.08);
+  --shadow-md: 0 4px 16px rgba(43, 27, 18, 0.12);
+  --shadow-lg: 0 8px 32px rgba(43, 27, 18, 0.16);
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================================
+   Base Reset
+   ============================================================ */
+
+* {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
+  height: 100%;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: var(--milk-cream);
+  color: var(--text-primary);
+  min-height: 100%;
+  overflow-x: hidden;
+  /* Safe area padding for iOS */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ============================================================
+   Typography Scale
+   ============================================================ */
+
+.text-display {
+  font-size: 2.25rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.text-headline {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.text-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.text-body {
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.text-caption {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   App Shell
+   ============================================================ */
+
+.app-shell {
+  min-height: 100vh;
+  max-width: 480px;
+  margin: 0 auto;
+  background-color: var(--milk-cream);
+  position: relative;
+}
+
+.page-content {
+  padding-bottom: 80px; /* space for bottom nav */
+}
+
+/* ============================================================
+   Bottom Navigation
+   ============================================================ */
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  background: rgba(251, 243, 231, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(139, 90, 43, 0.1);
+  padding: 8px 0;
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+  z-index: 50;
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  text-decoration: none;
+  min-width: 60px;
+}
+
+.bottom-nav-item.active {
+  color: var(--chai-brown);
+}
+
+.bottom-nav-item span {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* ============================================================
+   Cards
+   ============================================================ */
+
+.card {
+  background: var(--surface-0);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.card-surface {
+  background: var(--surface-1);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(139, 90, 43, 0.08);
+}
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--chai-brown);
+  color: white;
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 14px 28px;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 12px rgba(139, 90, 43, 0.3);
+  min-height: 52px;
+}
+
+.btn-primary:hover {
+  background: var(--chai-brown-dark);
+  box-shadow: 0 6px 20px rgba(139, 90, 43, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(139, 90, 43, 0.3);
+}
+
+.btn-primary:disabled {
+  background: #C4A882;
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  color: var(--chai-brown);
+  border: 2px solid rgba(139, 90, 43, 0.25);
+  border-radius: var(--radius-full);
+  padding: 12px 28px;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  min-height: 52px;
+}
+
+.btn-secondary:hover {
+  background: rgba(139, 90, 43, 0.06);
+  border-color: rgba(139, 90, 43, 0.4);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-ghost:hover {
+  background: rgba(139, 90, 43, 0.08);
+  color: var(--chai-brown);
+}
+
+.btn-success {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--cardamom-green);
+  color: white;
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 14px 28px;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 4px 12px rgba(75, 107, 63, 0.3);
+  min-height: 52px;
+}
+
+.btn-success:hover {
+  background: #3A5630;
+  transform: translateY(-1px);
+}
+
+/* ============================================================
+   Inputs
+   ============================================================ */
+
+.input-field {
+  width: 100%;
+  background: var(--surface-1);
+  border: 1.5px solid rgba(139, 90, 43, 0.15);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  outline: none;
+  transition: all var(--transition-fast);
+  min-height: 52px;
+}
+
+.input-field:focus {
+  border-color: var(--chai-brown);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(139, 90, 43, 0.1);
+}
+
+.input-field::placeholder {
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+.input-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  display: block;
+}
+
+/* ============================================================
+   Delivery Code Display
+   ============================================================ */
+
+.delivery-code {
+  font-size: 4rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: var(--chai-brown);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   Price Display
+   ============================================================ */
+
+.price-display {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--chai-brown);
+  letter-spacing: -0.01em;
+}
+
+.price-small {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--chai-brown);
+}
+
+/* ============================================================
+   Status Badges
+   ============================================================ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.badge-placed { background: #FFF3CD; color: #856404; }
+.badge-accepted { background: #CCE5FF; color: #004085; }
+.badge-assigned { background: #D1ECF1; color: #0C5460; }
+.badge-out_for_delivery { background: #FFE5B4; color: #7D4E00; }
+.badge-delivered { background: #D4EDDA; color: #155724; }
+.badge-cancelled { background: #F8D7DA; color: #721C24; }
+.badge-confirmed { background: #D4EDDA; color: #155724; }
+.badge-pending { background: #FFF3CD; color: #856404; }
+
+/* ============================================================
+   Qty Stepper
+   ============================================================ */
+
+.qty-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: rgba(139, 90, 43, 0.06);
+  border-radius: var(--radius-full);
+  padding: 2px;
+  border: 1.5px solid rgba(139, 90, 43, 0.15);
+}
+
+.qty-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.qty-btn.minus {
+  background: white;
+  color: var(--chai-brown);
+  box-shadow: var(--shadow-xs);
+}
+
+.qty-btn.plus {
+  background: var(--chai-brown);
+  color: white;
+  box-shadow: 0 2px 6px rgba(139, 90, 43, 0.3);
+}
+
+.qty-btn:hover {
+  transform: scale(1.05);
+}
+
+.qty-value {
+  min-width: 32px;
+  text-align: center;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ============================================================
+   Loading Spinner
+   ============================================================ */
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2.5px solid rgba(139, 90, 43, 0.2);
+  border-top-color: var(--chai-brown);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   Code Input (4-digit)
+   ============================================================ */
+
+.code-input {
+  width: 64px;
+  height: 72px;
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 800;
+  border: 2px solid rgba(139, 90, 43, 0.2);
+  border-radius: var(--radius-lg);
+  background: white;
+  color: var(--warm-charcoal);
+  outline: none;
+  transition: all var(--transition-fast);
+  font-variant-numeric: tabular-nums;
+}
+
+.code-input:focus {
+  border-color: var(--chai-brown);
+  box-shadow: 0 0 0 4px rgba(139, 90, 43, 0.1);
+}
+
+/* ============================================================
+   Summary Cards (Owner Dashboard)
+   ============================================================ */
+
+.stat-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 20px 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(139, 90, 43, 0.06);
+}
+
+.stat-value {
+  font-size: 1.875rem;
+  font-weight: 800;
+  color: var(--warm-charcoal);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 4px;
+}
+
+/* ============================================================
+   Order Timeline
+   ============================================================ */
+
+.timeline-item {
+  display: flex;
+  gap: 12px;
+  position: relative;
+}
+
+.timeline-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--chai-brown);
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.timeline-line {
+  position: absolute;
+  left: 4px;
+  top: 14px;
+  bottom: -8px;
+  width: 2px;
+  background: rgba(139, 90, 43, 0.15);
+}
+
+/* ============================================================
+   Toast / Alert
+   ============================================================ */
+
+.toast {
+  background: var(--warm-charcoal);
+  color: white;
+  border-radius: var(--radius-lg);
+  padding: 14px 18px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toast-success {
+  background: var(--cardamom-green);
+}
+
+.toast-error {
+  background: #B91C1C;
+}
+
+/* ============================================================
+   Utility
+   ============================================================ */
+
+.w-full { width: 100%; }
+.hidden { display: none !important; }
+
+.gradient-hero {
+  background: linear-gradient(135deg, var(--chai-brown) 0%, var(--chai-brown-light) 50%, var(--turmeric-gold) 100%);
+}
+
+.surface-glass {
+  background: rgba(251, 243, 231, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* ============================================================
+   Page Header
+   ============================================================ */
+
+.page-header {
+  background: white;
+  border-bottom: 1px solid rgba(139, 90, 43, 0.08);
+  padding: 16px 20px;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+/* ============================================================
+   Scrollbar (thin webkit)
+   ============================================================ */
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 90, 43, 0.2);
+  border-radius: 2px;
+}
+
+/* ============================================================
+   Offline Banner
+   ============================================================ */
+
+.offline-banner {
+  background: rgba(43, 27, 18, 0.9);
+  color: white;
+  padding: 10px 20px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* ============================================================
+   Demo Mode Banner
+   ============================================================ */
+
+.demo-banner {
+  background: linear-gradient(135deg, var(--turmeric-gold), #F59E0B);
+  color: var(--warm-charcoal);
+  padding: 10px 20px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.03em;
+}

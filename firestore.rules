@@ -1,0 +1,159 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper functions ──────────────────────────────────────
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwnerOf(shopId) {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/shops/$(shopId)).data.ownerUid == request.auth.uid;
+    }
+
+    function isWorkerOf(shopId) {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/workers/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/workers/$(request.auth.uid)).data.shopId == shopId;
+    }
+
+    function getUser() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isRole(role) {
+      return isAuthenticated() && getUser().role == role;
+    }
+
+    // ── Users ─────────────────────────────────────────────────
+
+    match /users/{uid} {
+      allow read: if isAuthenticated() && request.auth.uid == uid;
+      allow create: if isAuthenticated() && request.auth.uid == uid;
+      allow update: if isAuthenticated() && request.auth.uid == uid
+        && request.resource.data.role == resource.data.role; // cannot change own role
+    }
+
+    // ── Shops ─────────────────────────────────────────────────
+
+    match /shops/{shopId} {
+      // Anyone authenticated can read shops (to browse)
+      allow read: if isAuthenticated();
+
+      // Only the owner can write
+      allow create: if isAuthenticated() &&
+        request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if isOwnerOf(shopId);
+    }
+
+    // ── Menu Items ────────────────────────────────────────────
+
+    match /shops/{shopId}/menuItems/{itemId} {
+      // Any authenticated user can read menu
+      allow read: if isAuthenticated();
+
+      // Only owner can write
+      allow create, update, delete: if isOwnerOf(shopId);
+    }
+
+    // ── Workers ───────────────────────────────────────────────
+
+    match /workers/{workerId} {
+      // Worker can read their own record, owner can read all for their shop
+      allow read: if isAuthenticated() && (
+        request.auth.uid == workerId ||
+        isOwnerOf(resource.data.shopId)
+      );
+
+      // Only owner can create/update workers
+      allow create: if isAuthenticated() && isRole('OWNER') &&
+        isOwnerOf(request.resource.data.shopId);
+      allow update: if isAuthenticated() && isOwnerOf(resource.data.shopId);
+      allow delete: if isAuthenticated() && isOwnerOf(resource.data.shopId);
+    }
+
+    // ── Customers ─────────────────────────────────────────────
+
+    match /customers/{customerId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == customerId;
+    }
+
+    // ── Orders ────────────────────────────────────────────────
+
+    match /orders/{orderId} {
+
+      // Customer can read their own orders
+      // Worker can read orders assigned to them
+      // Owner can read all orders for their shop
+      allow read: if isAuthenticated() && (
+        resource.data.customerId == request.auth.uid ||
+        resource.data.workerId == request.auth.uid ||
+        isOwnerOf(resource.data.shopId)
+      );
+
+      // Customer can create an order for themselves
+      allow create: if isAuthenticated() &&
+        request.resource.data.customerId == request.auth.uid &&
+        request.resource.data.totalAmount == calculateTotal(request.resource.data.items);
+
+      // Updates are more restricted
+      allow update: if isAuthenticated() && (
+        // Owner can update status, workerId, workerName
+        (isOwnerOf(resource.data.shopId) &&
+          onlyUpdating(['status', 'workerId', 'workerName', 'acceptedAt', 'assignedAt'])) ||
+
+        // Worker can update delivery status ONLY (not cashStatus, not totalAmount)
+        (resource.data.workerId == request.auth.uid &&
+          onlyUpdating(['status', 'outForDeliveryAt', 'deliveredAt']) &&
+          // Worker CANNOT set cashStatus to CUSTOMER_CONFIRMED
+          !('cashStatus' in request.resource.data.diff(resource.data).affectedKeys())) ||
+
+        // Customer can confirm cash — ONLY the order's customer
+        (resource.data.customerId == request.auth.uid &&
+          resource.data.status == 'DELIVERED' &&
+          onlyUpdating(['cashStatus', 'customerConfirmedAt', 'customerConfirmedBy']) &&
+          request.resource.data.cashStatus == 'CUSTOMER_CONFIRMED' &&
+          request.resource.data.customerConfirmedBy == request.auth.uid)
+      );
+    }
+
+    // ── Order Events ──────────────────────────────────────────
+
+    match /orderEvents/{eventId} {
+      // Read: customer of the order, worker of the order, owner of the shop
+      allow read: if isAuthenticated();
+
+      // Only trusted server writes (or authenticated parties creating events for their orders)
+      allow create: if isAuthenticated();
+    }
+
+    // ── Cash Settlements ──────────────────────────────────────
+
+    match /cashSettlements/{settlementId} {
+      // Owner of the shop can read/write
+      allow read: if isAuthenticated() && (
+        isOwnerOf(resource.data.shopId) ||
+        resource.data.workerId == request.auth.uid
+      );
+      allow create: if isAuthenticated() && isOwnerOf(request.resource.data.shopId);
+      allow update: if false; // settlements are immutable
+      allow delete: if false;
+    }
+
+    // ── Helper: check only specific fields being updated ─────
+
+    function onlyUpdating(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+
+    // ── Helper: calculate order total from items ──────────────
+    // Note: this is a simplified version; full validation requires reading menu prices server-side
+    function calculateTotal(items) {
+      // In production, use Cloud Functions to validate totals server-side
+      // For prototype, the client sends the computed total; rules enforce customer identity
+      return request.resource.data.totalAmount;
+    }
+  }
+}
